@@ -1,0 +1,61 @@
+- name: Habor ansible playbook
+  hosts: db
+  become: yes
+  gather_facts: false
+  hosts: all
+  tasks:
+  - name: Update system
+    remote_user: vagrant
+    shell: |
+      apt update
+  - name: Install ca-certificates
+    remote_user: vagrant
+    shell: |  
+      apt -y install apt-transport-https ca-certificates curl software-properties-common
+
+  - name: Curl and add key to deb repository
+    remote_user: vagrant 
+    shell: |
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+      add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+ 
+  - name: Update system
+    remote_user: vagrant
+    shell: |
+      apt update
+
+  - name: Install docker-ce-cli
+    remote_user: vagrant
+    shell: |
+      apt -y install docker-ce docker-ce-cli containerd.io
+
+  - name: Install curl and download docker-compose
+    remote_user: vagrant
+    shell: |
+      apt install -y curl
+      curl -s https://api.github.com/repos/docker/compose/releases/latest | grep browser_download_url | grep docker-compose-linux-x86_64 | cut -d '"' -f 4 | wget -qi -
+
+  - name: Add permissions and moved to /usr/local/bin/
+    remote_user: vagrant
+    shell: |
+      chmod +x docker-compose-linux-x86_64
+      sudo mv docker-compose-linux-x86_64 /usr/local/bin/docker-compose
+
+  - name: Download and unzip harbor repository 
+    remote_user: vagrant
+    shell: |
+      curl -s https://api.github.com/repos/goharbor/harbor/releases/latest | grep browser_download_url | cut -d '"' -f 4 | grep '\.tgz$' | wget -i -
+      tar xvzf harbor-offline-installer*.tgz
+
+  - name: Copy a new harbor.yml instead of local
+    remote_user: vagrant
+    copy:
+      src: ~/ansible/files/harbor.yml
+      dest: /home/vagrant/harbor
+
+
+  - name: Update system
+    remote_user: vagrant
+    shell: |
+      cd harbor
+      sudo ./install.sh
