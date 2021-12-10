@@ -54,7 +54,7 @@
       dest: /home/vagrant/harbor
 
 
-  - name: Update system
+  - name: Final Installation
     remote_user: vagrant
     shell: |
       cd harbor
