@@ -1,0 +1,52 @@
+---
+# tasks file for harbor-install
+  - name: Update system
+    shell: |
+      apt update
+
+  - name: Install ca-certificates
+    shell: |
+      apt -y install apt-transport-https ca-certificates curl software-properties-common
+  - name: Curl and add key to deb repository
+    shell: |
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+      add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+  - name: Update system
+    shell: |
+      apt update
+  - name: Install docker-ce-cli
+    shell: |
+      apt -y install docker-ce docker-ce-cli containerd.io
+  - name: Install curl and download docker-compose
+    shell: | 
+      apt install -y curl
+      curl -s https://api.github.com/repos/docker/compose/releases/latest | grep browser_download_url | grep docker-compose-linux-x86_64 | cut -d '"' -f 4 | wget -qi -
+
+  - name: Add permissions and moved to /usr/local/bin/
+    shell: |
+      chmod +x docker-compose-linux-x86_64
+      sudo mv docker-compose-linux-x86_64 /usr/local/bin/docker-compose
+
+  - name: Download harber repository
+    get_url: 
+      url: https://github.com/goharbor/harbor/releases/download/v2.3.4/harbor-offline-installer-v2.3.4.tgz
+      dest: /home/vagrant
+
+  - name: Unzip harber repository
+    shell: |
+      tar xvzf harbor-offline-installer*.tgz  
+
+  - name: Copy a new harbor.yml instead of local
+    copy:
+      src: harbor.yml
+      dest: /home/vagrant/harbor
+
+
+  - name: Final Installation
+    shell: |
+      cd harbor
+      sudo ./install.sh 
+    register: results
+  - debug:
+      var: results.stdout      
